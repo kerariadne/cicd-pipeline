@@ -14,16 +14,18 @@ pipeline {
         stage('Checkout SCM') {
             steps {
                 script {
+                    def appPort = '3000'
+                    def imageName = 'nodemain'
+
                     if (env.BRANCH_NAME == 'dev') {
-                        env.APP_PORT = '3001'
-                        env.IMAGE_NAME = 'nodedev'
+                        appPort = '3001'
+                        imageName = 'nodedev'
                     } else if (env.BRANCH_NAME == 'main') {
-                        env.APP_PORT = '3000'
-                        env.IMAGE_NAME = 'nodemain'
+                        appPort = '3000'
+                        imageName = 'nodemain'
                     }
+                    echo "Branch: ${env.BRANCH_NAME}, App Port: ${appPort}, Image Name: ${imageName}"
                 }
-                checkout scm
-                echo "Branch: ${env.BRANCH_NAME}, App Port: ${env.APP_PORT}, Image Name: ${env.IMAGE_NAME}"
             }
         }
 
