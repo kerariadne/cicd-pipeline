@@ -7,8 +7,6 @@ pipeline {
         IMAGE_TAG = 'v1.0'
         BASE_URL = "http://localhost"
         DOCKER_HOST = "tcp://docker:2375"
-        APP_PORT = '3000'
-        IMAGE_NAME = 'nodemain'
     }
 
     stages {
@@ -31,16 +29,6 @@ pipeline {
         stage('Build & Test Application') {
             steps {
                 script {
-                    def port = '3000'
-                    def image = 'nodemain'
-                    if (env.BRANCH_NAME == 'dev') {
-                        port = '3001'
-                        image = 'nodedev'
-                    } else if (env.BRANCH_NAME == 'main') {
-                        port = '3000'
-                        image = 'nodemain'
-                    }
-                    sh "echo Running npm install"
                     sh "npm install"
                     sh "npm test"
                 }
