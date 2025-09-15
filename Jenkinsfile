@@ -1,6 +1,8 @@
 pipeline {
     agent any
-
+    tools {
+        nodejs 'node'
+    }
     environment {
         APP_PORT = '3000'
         IMAGE_NAME = 'nodemain'
