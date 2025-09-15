@@ -1,11 +1,12 @@
-
 pipeline {
-    agent any 
-
-    tools {
-        nodejs 'node'
+    agent {
+        docker {
+            image 'node:16-bullseye'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
     }
 
+    
     environment {
         APP_PORT = '3000'
         IMAGE_NAME = 'nodemain'
@@ -24,30 +25,22 @@ pipeline {
                         env.APP_PORT = '3000'
                         env.IMAGE_NAME = 'nodemain'
                     }
-
                 }
                 checkout scm
                 echo "Branch: ${env.BRANCH_NAME}, App Port: ${env.APP_PORT}, Image Name: ${env.IMAGE_NAME}"
             }
         }
 
-        stage('Build Application') {
+        stage('Build & Test Application') { 
             steps {
                 sh 'npm install'
-            }
-        }
-
-        stage('Test Application') {
-            steps {
                 sh 'npm test'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-                }
+                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
@@ -70,6 +63,7 @@ pipeline {
     post {
         always {
             echo 'Pipeline finished.'
+            cleanWs() 
         }
         success {
             echo 'Pipeline succeeded!'
