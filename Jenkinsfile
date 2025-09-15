@@ -1,12 +1,8 @@
 pipeline {
     agent {
-        docker {
-            image 'node:16-bullseye'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
+        label 'docker-agent'
     }
 
-    
     environment {
         APP_PORT = '3000'
         IMAGE_NAME = 'nodemain'
