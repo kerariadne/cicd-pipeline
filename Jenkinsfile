@@ -24,8 +24,12 @@ pipeline {
                         appPort = '3000'
                         imageName = 'nodemain'
                     }
-                    echo "Branch: ${env.BRANCH_NAME}, App Port: ${appPort}, Image Name: ${imageName}"
+                    env.APP_PORT = appPort
+                    env.IMAGE_NAME = imageName
+
+                    echo "Branch: ${env.BRANCH_NAME}, App Port: ${env.APP_PORT}, Image Name: ${env.IMAGE_NAME}"
                 }
+
             }
         }
 
