@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-            image 'tamarabr/cicd-pipeline:v1.0'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
 
     environment {
         APP_PORT = '3000'
@@ -30,7 +25,7 @@ pipeline {
             }
         }
 
-        stage('Build & Test Application') { 
+        stage('Build & Test Application') {
             steps {
                 sh 'npm install'
                 sh 'npm test'
@@ -39,7 +34,10 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                script {
+                    echo "Building Docker image ${IMAGE_NAME}:${IMAGE_TAG}..."
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
             }
         }
 
@@ -62,7 +60,7 @@ pipeline {
     post {
         always {
             echo 'Pipeline finished.'
-            cleanWs() 
+            cleanWs()
         }
         success {
             echo 'Pipeline succeeded!'
