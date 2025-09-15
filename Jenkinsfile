@@ -6,9 +6,6 @@ pipeline {
     environment {
         IMAGE_TAG = 'v1.0'
         BASE_URL = "http://localhost"
-        DOCKER_HOST = "tcp://docker:2375"
-        APP_PORT = '3000'
-        IMAGE_NAME = 'nodemain'
     }
 
     stages {
