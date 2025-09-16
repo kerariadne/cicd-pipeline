@@ -1,5 +1,3 @@
-// Corrected and Improved Jenkinsfile
-
 pipeline {
     agent any
     
@@ -8,9 +6,9 @@ pipeline {
     }
 
     environment {
-\        IMAGE_TAG = 'v1.0'
+        IMAGE_TAG = 'v1.0'
         BASE_URL = "http://localhost"
-\        APP_PORT = '' 
+        APP_PORT = '' 
         IMAGE_NAME = ''
     }
 
