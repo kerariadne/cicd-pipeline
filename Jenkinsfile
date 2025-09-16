@@ -1,3 +1,4 @@
+@Library('shared-library') _
 pipeline {
     agent any
     tools {
@@ -6,7 +7,10 @@ pipeline {
     environment {
         IMAGE_TAG = 'v1.0'
         BASE_URL = "http://localhost"
-        DOCKER_HOST = "tcp://docker:2375"
+        DOCKERHUB_CREDS = credentials('tamarabr-dockerhub')
+        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDS_USR}"
+        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDS_PSW}"
+        DOCKERHUB_CREDENTIALS_ID = 'tamarabr-dockerhub'
     }
 
     stages {
@@ -26,70 +30,67 @@ pipeline {
             }
         }
 
-        stage('Build & Test Application') {
+        stage('Build & test with npm') {
             steps {
                 script {
-                    sh "npm install"
-                    sh "npm test"
+                    buildAndTest()
                 }
+            }
+        }
+        
+        stage('Lint Dockerfile with Hadolint') {
+            steps {
+                runHadolint()
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 script {
-                    def port = '3000'
-                    def image = 'nodemain'
-                    if (env.BRANCH_NAME == 'dev') {
-                        port = '3001'
-                        image = 'nodedev'
-                    } else if (env.BRANCH_NAME == 'main') {
-                        port = '3000'
-                        image = 'nodemain'
-                    }
-
+                    def image = env.IMAGE_NAME
                     echo "Building Docker image ${image}:${env.IMAGE_TAG}..."
                     sh "docker build -t ${image}:${env.IMAGE_TAG} ."
                 }
             }
         }
 
-        stage('Deploy Application') {
+        stage('Scan for Vulnerabilities') {
             steps {
                 script {
-                    def port = '3000'
-                    def image = 'nodemain'
-                    if (env.BRANCH_NAME == 'dev') {
-                        port = '3001'
-                        image = 'nodedev'
-                    } else if (env.BRANCH_NAME == 'main') {
-                        port = '3000'
-                        image = 'nodemain'
-                    }
+                    def fullImageName = "${DOCKERHUB_USERNAME}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                    sh "docker tag ${env.IMAGE_NAME}:${env.IMAGE_TAG} ${fullImageName}"
+                    scanWithTrivy(fullImageName: fullImageName)
+                }
+            }
+        }
 
-                    echo "Stopping and removing old container for ${image}..."
-                    sh "docker stop ${image} || true"
-                    sh "docker rm ${image} || true"
-
-                    echo "Deploying new container for ${image} on port ${port}..."
-                    sh "docker run -d --name ${image} -p ${port}:${port} ${image}:${env.IMAGE_TAG}"
-
-                    echo "Application deployed at ${env.BASE_URL}:${port}"
+        stage('Push to Docker Hub') {
+            steps {
+                script {
+                    dockerLogin(credentialsId: DOCKERHUB_CREDENTIALS_ID)
+                    dockerTagAndPush(
+                        imageName: env.IMAGE_NAME,
+                        imageTag: env.IMAGE_TAG,
+                        dockerhubUsername: DOCKERHUB_USERNAME
+                    )
                 }
             }
         }
     }
 
     post {
-        always {
-            echo 'Pipeline finished.'
-            cleanWs()
-        }
         success {
-            echo 'Pipeline succeeded!'
+            script {
+                echo "CI build successful. Triggering CD process..."
+                if (env.BRANCH_NAME == 'main') {
+                    build job: 'Deploy_to_main', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
+                } else if (env.BRANCH_NAME == 'dev') {
+                    build job: 'Deploy_to_dev', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
+                }
+            }
         }
-        failure {
-            echo 'Pipeline failed!'
+        always {
+            dockerLogout()
         }
     }
 }
