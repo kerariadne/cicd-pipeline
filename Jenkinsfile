@@ -89,22 +89,23 @@ pipeline {
 
         
 
-    post {
-        success {
-            script {
-                echo "CI build successful. Triggering CD process..."
-                if (env.BRANCH_NAME == 'main') {
-                    echo "Triggering Deploy_to_main with version ${IMAGE_TAG}"
-                    build job: 'Deploy_to_main', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
-                } else if (env.BRANCH_NAME == 'dev') {
-                    echo "Triggering Deploy_to_dev with version ${IMAGE_TAG}"
-                    build job: 'Deploy_to_dev', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
+        post {
+            success {
+                script {
+                    echo "CI build successful. Triggering CD process..."
+                    if (env.BRANCH_NAME == 'main') {
+                        echo "Triggering Deploy_to_main with version ${IMAGE_TAG}"
+                        build job: 'Deploy_to_main', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
+                    } else if (env.BRANCH_NAME == 'dev') {
+                        echo "Triggering Deploy_to_dev with version ${IMAGE_TAG}"
+                        build job: 'Deploy_to_dev', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
+                    }
                 }
             }
+            always {
+                dockerLogout()
+            }
         }
-        always {
-            dockerLogout()
-        }
-    }
     
+    }
 }
