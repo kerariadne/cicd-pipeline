@@ -10,6 +10,7 @@ pipeline {
         DOCKERHUB_CREDS = credentials('tamarabr-dockerhub')
         DOCKERHUB_USERNAME = "${DOCKERHUB_CREDS_USR}"
         DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDS_PSW}"
+        DOCKERHUB_CREDENTIALS_ID = 'tamarabr-dockerhub'
     }
 
     stages {
