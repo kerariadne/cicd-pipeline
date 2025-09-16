@@ -7,7 +7,9 @@ pipeline {
     environment {
         IMAGE_TAG = 'v1.0'
         BASE_URL = "http://localhost"
-        DOCKERHUB_CREDENTIALS = credentials('tamarabr-dockerhub')
+        DOCKERHUB_CREDS = credentials('tamarabr-dockerhub')
+        DOCKERHUB_USERNAME = "${DOCKERHUB_CREDS_USR}"
+        DOCKERHUB_PASSWORD = "${DOCKERHUB_CREDS_PSW}"
     }
 
     stages {
