@@ -1,5 +1,4 @@
 @Library('shared-library') _
-
 pipeline {
     agent any
     tools {
@@ -41,34 +40,22 @@ pipeline {
                 runHadolint()
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    def port = '3000'
-                    def image = 'nodemain'
-                    if (env.BRANCH_NAME == 'dev') {
-                        port = '3001'
-                        image = 'nodedev'
-                    } else if (env.BRANCH_NAME == 'main') {
-                        port = '3000'
-                        image = 'nodemain'
-                    }
-
+                    def image = env.IMAGE_NAME
                     echo "Building Docker image ${image}:${env.IMAGE_TAG}..."
                     sh "docker build -t ${image}:${env.IMAGE_TAG} ."
                 }
             }
         }
 
-        
-
-
         stage('Scan for Vulnerabilities') {
             steps {
                 script {
                     def fullImageName = "${DOCKERHUB_USERNAME}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
                     sh "docker tag ${env.IMAGE_NAME}:${env.IMAGE_TAG} ${fullImageName}"
-                
                     scanWithTrivy(fullImageName: fullImageName)
                 }
             }
@@ -86,26 +73,21 @@ pipeline {
                 }
             }
         }
+    }
 
-        
-
-        post {
-            success {
-                script {
-                    echo "CI build successful. Triggering CD process..."
-                    if (env.BRANCH_NAME == 'main') {
-                        echo "Triggering Deploy_to_main with version ${IMAGE_TAG}"
-                        build job: 'Deploy_to_main', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
-                    } else if (env.BRANCH_NAME == 'dev') {
-                        echo "Triggering Deploy_to_dev with version ${IMAGE_TAG}"
-                        build job: 'Deploy_to_dev', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
-                    }
+    post {
+        success {
+            script {
+                echo "CI build successful. Triggering CD process..."
+                if (env.BRANCH_NAME == 'main') {
+                    build job: 'Deploy_to_main', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
+                } else if (env.BRANCH_NAME == 'dev') {
+                    build job: 'Deploy_to_dev', parameters: [[$class: 'StringParameterValue', name: 'IMAGE_VERSION', value: env.IMAGE_TAG]]
                 }
             }
-            always {
-                dockerLogout()
-            }
         }
-    
+        always {
+            dockerLogout()
+        }
     }
 }
